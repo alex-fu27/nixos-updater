@@ -12,7 +12,7 @@
 		in {
 			packages.default = naersk.buildPackage ./daemon ;
 			devShells.default = with pkgs; mkShell {
-				buildInputs = [ cargo rustc rustfmt pre-commit rustPackages.clippy ];
+				buildInputs = [ cargo rustc rustfmt pre-commit rustPackages.clippy pkg-config dbus ];
 				RUST_SRC_PATH = rustPlatform.rustLibSrc;
 			};
 		});
