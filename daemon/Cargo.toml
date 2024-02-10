@@ -6,8 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dbus = "0.9.7"
-dbus-crossroads = "0.5.2"
-dbus-tokio = { version = "0.7.6", features = [ "dbus-crossroads" ] }
+clap = { version = "3", features = [ "cargo" ] }
+dbus = "0.9"
+dbus-crossroads = "0.5"
+dbus-tokio = { version = "0.7", features = [ "dbus-crossroads" ] }
+enum-variants-strings = "0.2"
 futures = "0.3"
-tokio = { version = "1.36.0", features = ["time", "net", "macros", "rt-multi-thread"] }
+tokio = { version = "1.36", features = ["time", "net", "macros", "rt-multi-thread"] }
