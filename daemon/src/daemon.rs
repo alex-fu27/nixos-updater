@@ -159,7 +159,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     });
 
-    cr.insert("/de/afuchs/NixOSUpdater/hello", &[iface_token], Arc::new(Mutex::new(DaemonState::initial())));
+    cr.insert("/de/afuchs/NixOSUpdater", &[iface_token], Arc::new(Mutex::new(DaemonState::initial())));
     con.start_receive(MatchRule::new_method_call(), Box::new(move |msg, conn| {
         cr.handle_message(msg, conn).unwrap();
         true
