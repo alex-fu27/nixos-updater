@@ -1,17 +1,26 @@
+use crate::consts;
+
 use dbus::blocking::{Connection, Proxy};
+use dbus::blocking::stdintf::org_freedesktop_dbus::Properties;
 use std::time::Duration;
 
-struct Client {
+pub struct Client {
     con: Connection,
 }
 
 impl Client {
-    fn new() -> Result<Self, dbus::Error> {
+    pub fn new() -> Result<Self, dbus::Error> {
         let con = Connection::new_session()?;
         Ok(Self { con })
     }
 
-    fn get_proxy<'a>(&'a self) -> Proxy<'_, &'a Connection> {
-        self.con.with_proxy("de.afuchs.NixOSUpdater", "/de/afuchs/NixOSUpdater", Duration::from_millis(5000))
+    fn get_proxy(&self) -> Proxy<'_, &'_ Connection> {
+        self.con.with_proxy(consts::NAME, "/de/afuchs/NixOSUpdater", Duration::from_millis(5000))
+    }
+
+    pub fn print_status(&self) -> Result<(), dbus::Error> {
+        let status: String = self.get_proxy().get(consts::NAME, "UpdateState")?;
+        println!("{}", status);
+        Ok(())
     }
 }

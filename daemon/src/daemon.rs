@@ -10,7 +10,7 @@ use std::time::Duration;
 use std::sync::{Mutex, Arc};
 use std::fmt;
 
-const NAME: &str = "de.afuchs.NixOSUpdater";
+use crate::consts;
 
 #[derive(Debug)]
 enum ProcessState {
@@ -127,14 +127,14 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
 
-    con.request_name(NAME, false, true, false).await?;
+    con.request_name(consts::NAME, false, true, false).await?;
 
     let mut cr = Crossroads::new();
     
     // tell Crossroads how to spawn tasks
     cr.set_async_support(Some((con.clone(), Box::new(|x| { tokio::spawn(x); }))));
 
-    let iface_token = cr.register(NAME, |b| {
+    let iface_token = cr.register(consts::NAME, |b| {
         let props = Arc::new(DbusProperties::new(b));
         
         b.method_with_cr_async("StartUpdate", (), (), move |mut ctx, cr, _: ()| {

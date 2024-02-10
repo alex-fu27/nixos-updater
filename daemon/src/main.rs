@@ -1,5 +1,6 @@
 mod daemon;
 mod client;
+pub mod consts;
 
 use log::debug;
 
@@ -28,6 +29,15 @@ fn setup_logging(verbosity: u8) {
         .unwrap();
 }
 
+fn handle_client_command(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let client = client::Client::new()?;
+    let res = match args.command {
+        Command::Status => client.print_status(),
+        Command::Daemon => unreachable!(),
+    };
+    Ok(res?)
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
@@ -41,6 +51,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .build()
                 .unwrap()
                 .block_on(daemon::main()),
-        Command::Status => todo!(),
+        _ => handle_client_command(&args),
     }
 }
