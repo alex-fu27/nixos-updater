@@ -4,6 +4,7 @@ use clap::{Parser, Subcommand};
 pub enum Command {
     Daemon,
     Status,
+    BuildUpdate,
 }
 
 #[derive(Parser, Debug)]

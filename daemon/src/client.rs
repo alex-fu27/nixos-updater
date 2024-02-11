@@ -27,4 +27,8 @@ impl Client {
         }
         Ok(())
     }
+
+    pub fn build_update(&self) -> anyhow::Result<()> {
+        todo!()
+    }
 }
