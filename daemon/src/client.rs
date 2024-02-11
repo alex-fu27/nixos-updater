@@ -20,7 +20,11 @@ impl Client {
 
     pub fn print_status(&self) -> Result<(), dbus::Error> {
         let status: String = self.get_proxy().get(consts::NAME, "UpdateState")?;
-        println!("{}", status);
+        println!("UpdateState={}", status);
+        if status == "processing" {
+            let status: String = self.get_proxy().get(consts::NAME, "ProcessState")?;
+            println!("ProcessState={}", status);
+        }
         Ok(())
     }
 }

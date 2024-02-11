@@ -1,25 +1,10 @@
 mod daemon;
 mod client;
+pub mod args;
 pub mod consts;
 
 use log::debug;
-
-use clap::{Parser, Subcommand};
-
-#[derive(Subcommand, Debug)]
-enum Command {
-    Daemon,
-    Status,
-}
-
-#[derive(Parser, Debug)]
-#[command(version, about, long_about=None)]
-struct Args {
-    #[arg(short, long, action=clap::ArgAction::Count)]
-    verbose: u8,
-    #[command(subcommand)]
-    command: Command,
-}
+use args::{Args, Command};
 
 fn setup_logging(verbosity: u8) {
     stderrlog::new()
@@ -29,7 +14,7 @@ fn setup_logging(verbosity: u8) {
         .unwrap();
 }
 
-fn handle_client_command(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_client_commandline(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let client = client::Client::new()?;
     let res = match args.command {
         Command::Status => client.print_status(),
@@ -39,7 +24,7 @@ fn handle_client_command(args: &Args) -> Result<(), Box<dyn std::error::Error>> 
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse();
+    let args = args::parse();
 
     setup_logging(args.verbose);
     debug!("Arguments: {:?}", args);
@@ -51,6 +36,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .build()
                 .unwrap()
                 .block_on(daemon::main()),
-        _ => handle_client_command(&args),
+        _ => handle_client_commandline(&args),
     }
 }
