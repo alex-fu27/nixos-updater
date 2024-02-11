@@ -9,7 +9,8 @@ use args::{Args, Command};
 fn setup_logging(verbosity: u8) {
     stderrlog::new()
         .module(module_path!())
-        .verbosity(usize::from(verbosity))
+        // +1 to make warn visible by default
+        .verbosity(usize::from(verbosity) + 1)
         .init()
         .unwrap();
 }
