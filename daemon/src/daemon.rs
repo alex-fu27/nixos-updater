@@ -9,6 +9,7 @@ use tokio::time::sleep;
 use std::time::Duration;
 use std::sync::{Mutex, Arc};
 use std::fmt;
+use log::warn;
 
 use crate::consts;
 
@@ -117,7 +118,16 @@ impl DbusProperties {
     }
 }
 
+fn check_root() {
+    use nix::unistd::Uid;
+    if ! Uid::effective().is_root() {
+        warn!("Deamon not running as root.");
+    }
+}
+
 pub async fn main() -> anyhow::Result<()> {
+    check_root();
+
     let (resource, con) = connection::new_session_sync()?;
 
     // spawn , will only finish on error
