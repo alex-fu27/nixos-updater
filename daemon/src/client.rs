@@ -18,7 +18,7 @@ impl Client {
         self.con.with_proxy(consts::NAME, "/de/afuchs/NixOSUpdater", Duration::from_millis(5000))
     }
 
-    pub fn print_status(&self) -> Result<(), dbus::Error> {
+    pub fn print_status(&self) -> anyhow::Result<()> {
         let status: String = self.get_proxy().get(consts::NAME, "UpdateState")?;
         println!("UpdateState={}", status);
         if status == "processing" {

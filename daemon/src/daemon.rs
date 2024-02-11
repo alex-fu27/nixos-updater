@@ -117,7 +117,7 @@ impl DbusProperties {
     }
 }
 
-pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn main() -> anyhow::Result<()> {
     let (resource, con) = connection::new_session_sync()?;
 
     // spawn , will only finish on error

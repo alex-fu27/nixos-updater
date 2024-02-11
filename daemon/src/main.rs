@@ -14,16 +14,17 @@ fn setup_logging(verbosity: u8) {
         .unwrap();
 }
 
-fn handle_client_commandline(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_client_commandline(args: &Args) -> anyhow::Result<()> {
     let client = client::Client::new()?;
     let res = match args.command {
         Command::Status => client.print_status(),
+        Command::BuildUpdate => client.build_update(),
         Command::Daemon => unreachable!(),
     };
     Ok(res?)
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
     let args = args::parse();
 
     setup_logging(args.verbose);
