@@ -1,4 +1,4 @@
-mod daemon;
+mod dbus_daemon;
 mod client;
 pub mod args;
 pub mod consts;
@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<()> {
                 .enable_all()
                 .build()
                 .unwrap()
-                .block_on(daemon::main()),
+                .block_on(dbus_daemon::main()),
         _ => handle_client_commandline(&args),
     }
 }
