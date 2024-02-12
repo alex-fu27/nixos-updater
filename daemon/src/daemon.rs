@@ -1,4 +1,4 @@
-use crate::nix::{StorePath, StorePathError};
+use crate::nix::{BuildOutput, StorePathError};
 use std::process::{Command, Stdio};
 use std::io;
 use std::io::{BufReader, BufRead};
@@ -43,14 +43,13 @@ impl Daemon {
         println!("building...");
     }
 
-    fn build(&self) -> Result<StorePath> {
+    fn build(&self) -> Result<BuildOutput> {
         let wd = mktemp::Temp::new_dir()?;
-        let wd_path = wd.to_path_buf();
         let mut child = Command::new("nix")
             .stdin(Stdio::null())
             .stderr(Stdio::piped())
             .stdout(Stdio::null())
-            .current_dir(&wd_path)
+            .current_dir(&wd.as_path())
             .args(["--extra-experimental-features", "nix-command flakes",
                 "--log-format", "internal-json", "-vv",
                 "build", "nixpkgs#hello"])
@@ -63,11 +62,7 @@ impl Daemon {
 
         child.wait()?;
 
-        let mut res_path = wd_path.clone();
-        res_path.push("result");
-        let result = res_path.read_link()?;
-
-        Ok(StorePath::new(result.into())?)
+        Ok(BuildOutput::from_temp(wd)?)
     }
 }
 

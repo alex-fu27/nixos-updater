@@ -2,6 +2,28 @@ use std::path::{Path, PathBuf};
 use mktemp::Temp;
 
 #[derive(Debug)]
+pub struct BuildOutput {
+    path: StorePath,
+    linkdir: Temp,
+}
+
+impl BuildOutput {
+    fn read_link_dir(linkdir: &Temp) -> Result<StorePath, StorePathError> {
+        let mut res_path = linkdir.to_path_buf();
+        res_path.push("result");
+        let res_path = res_path.read_link().map_err(|e| StorePathError::NotInStore(format!("bad out link: {}", e)))?;
+        Ok(StorePath::new(res_path)?)
+    }
+
+    pub fn from_temp(linkdir: Temp) -> Result<Self, StorePathError> {
+        Ok(Self {
+            path: Self::read_link_dir(&linkdir)?,
+            linkdir
+        })
+    }
+}
+
+#[derive(Debug)]
 pub struct StorePath(PathBuf);
 
 #[derive(Debug)]
