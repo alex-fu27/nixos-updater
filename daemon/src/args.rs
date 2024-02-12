@@ -5,6 +5,7 @@ pub enum Command {
     Daemon,
     Status,
     BuildUpdate,
+    DaemonDebug,
 }
 
 #[derive(Parser, Debug)]

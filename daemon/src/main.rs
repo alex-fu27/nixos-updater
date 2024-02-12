@@ -1,7 +1,9 @@
-mod dbus_daemon;
 mod client;
+mod dbus_daemon;
 pub mod args;
 pub mod consts;
+pub mod daemon;
+pub mod nix;
 
 use log::debug;
 use args::{Args, Command};
@@ -20,7 +22,7 @@ fn handle_client_commandline(args: &Args) -> anyhow::Result<()> {
     let res = match args.command {
         Command::Status => client.print_status(),
         Command::BuildUpdate => client.build_update(),
-        Command::Daemon => unreachable!(),
+        Command::Daemon | Command::DaemonDebug => unreachable!(),
     };
     Ok(res?)
 }
@@ -38,6 +40,8 @@ fn main() -> anyhow::Result<()> {
                 .build()
                 .unwrap()
                 .block_on(dbus_daemon::main()),
+        Command::DaemonDebug =>
+            Ok(daemon::debug_main()),
         _ => handle_client_commandline(&args),
     }
 }

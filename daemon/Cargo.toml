@@ -14,6 +14,7 @@ dbus-tokio = { version = "0.7", features = [ "dbus-crossroads" ] }
 enum-variants-strings = "0.2"
 futures = "0.3"
 log = "0.4.20"
+mktemp = "0.5.1"
 nix = { version = "0.27", features = [ "user" ] }
 stderrlog = "0.6.0"
 tokio = { version = "1.36", features = ["time", "net", "macros", "rt-multi-thread"] }

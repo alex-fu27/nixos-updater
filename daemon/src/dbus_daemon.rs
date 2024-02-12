@@ -15,7 +15,6 @@ use crate::consts;
 
 #[derive(Debug)]
 enum ProcessState {
-    Evaluating,
     Building,
     Switching,
 }
@@ -24,7 +23,6 @@ impl ProcessState {
     fn to_str(&self) -> &'static str {
         use ProcessState::*;
         match self {
-            Evaluating => "evaluating",
             Building => "building",
             Switching => "switching",
         }
@@ -147,14 +145,14 @@ pub async fn main() -> anyhow::Result<()> {
     let iface_token = cr.register(consts::NAME, |b| {
         let props = Arc::new(DbusProperties::new(b));
         
-        b.method_with_cr_async("StartUpdate", (), (), move |mut ctx, cr, _: ()| {
+        b.method_with_cr_async("BuildUpdate", (), (), move |mut ctx, cr, _: ()| {
             let mh: SyncedDaemonState = Arc::clone(&cr.data_mut(ctx.path()).unwrap());
             let props = Arc::clone(&props);
 
             async move {
                 {
                     let mut ds = mh.lock().unwrap();
-                    ds.update_state = UpdateState::Processing(ProcessState::Evaluating);
+                    ds.update_state = UpdateState::Processing(ProcessState::Building);
                     ctx.push_msg((props.update_state)(ctx.path(), &ds.update_state.to_str().to_string()).unwrap());
                 }
                 sleep(Duration::from_millis(3000)).await;
