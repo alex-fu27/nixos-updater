@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Command, Stdio, ChildStderr};
 use std::io;
 use std::io::{BufRead, BufReader};
 use mktemp::Temp;
@@ -63,7 +63,8 @@ pub trait Buildable {
 }
 
 pub trait Updateable {
-    fn Update() -> Result<(), UpdateError>;
+    /// return true if the flake inputs (or channel revision) have changed
+    fn update(&self) -> Result<bool, UpdateError>;
 }
 
 pub struct Flake {
@@ -76,30 +77,60 @@ impl Flake {
     }
 }
 
-fn read_to_lines<T: io::Read>(o: &mut Option<T>) -> io::Lines<io::BufReader<T>> {
-    BufReader::new(o.take().unwrap()).lines()
+fn read_to_lines<T: io::Read>(o: &mut T) -> io::Lines<io::BufReader<&mut T>> {
+    BufReader::new(o).lines()
+}
+
+fn nix_command() -> Command {
+    let mut cmd = Command::new("nix");
+    cmd.stdin(Stdio::null())
+        .stderr(Stdio::piped())
+        .stdout(Stdio::null())
+        .args(["--extra-experimental-features", "nix-command flakes",
+                "--log-format", "internal-json", "-vv",]);
+    cmd
+}
+
+fn output_stderr_as_debug(stderr: &mut ChildStderr) {
+    let stderr = read_to_lines(stderr);
+
+    for line in stderr.flatten() {
+        log::debug!("{}", line);
+    }
 }
 
 impl Buildable for Flake {
     fn build(&self) -> Result<BuildOutput, BuildError> {
         let wd = Temp::new_dir()?;
-        let mut child = Command::new("nix")
-            .stdin(Stdio::null())
-            .stderr(Stdio::piped())
-            .stdout(Stdio::null())
+        let mut child = nix_command()
             .current_dir(&wd.as_path())
-            .args(["--extra-experimental-features", "nix-command flakes",
-                "--log-format", "internal-json", "-vv",
-                "build", &self.url])
+            .args(["build", &self.url])
             .spawn()?;
-        let stderr = read_to_lines(&mut child.stderr);
-
-        for line in stderr.flatten() {
-            log::debug!("{}", line);
-        }
+        
+        output_stderr_as_debug(&mut child.stderr.take().unwrap());
 
         child.wait()?;
 
         Ok(BuildOutput::from_temp(wd)?)
+    }
+}
+
+impl Updateable for Flake {
+    fn update(&self) -> Result<bool, UpdateError> {
+        let mut child = nix_command()
+            .args(["flake", "update", &self.url])
+            .spawn()?;
+        
+        let stderr = read_to_lines(child.stderr.take().unwrap);
+        let mut has_update = false;
+        for line in stderr.flatten() {
+            log::debug!("{}", line);
+            if line.contains("updating lock file") {
+                has_update = true;
+            }
+        }
+        child.wait()?;
+
+        Ok(has_update)
     }
 }

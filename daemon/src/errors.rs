@@ -17,7 +17,7 @@ pub enum BuildError {
 
 #[derive(Debug, Error)]
 pub enum UpdateError {
-    #[error("update error: {}", .0)]
+    #[error("update failed: {}", .0)]
     IOError(#[from] io::Error),
 }
 
