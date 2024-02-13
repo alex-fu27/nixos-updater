@@ -5,6 +5,8 @@ use std::io;
 pub enum StorePathError {
     #[error("path {} is not in nix store", .0)]
     NotInStore(String),
+    #[error("io error: {}", .0)]
+    IOError(#[from] io::Error),
 }
 
 #[derive(Debug, Error)]
@@ -33,5 +35,7 @@ pub enum UpgradeError {
     BuildError(#[from] BuildError),
     #[error("upgrade process failed: {}", .0)]
     UpdateError(#[from] UpdateError),
+    #[error("upgrade failed: {}", .0)]
+    StorePathError(#[from] StorePathError),
 }
 

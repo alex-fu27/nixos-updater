@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio, ChildStderr};
-use std::io;
+use std::{io, fs};
 use std::io::{BufRead, BufReader};
 use mktemp::Temp;
 use crate::errors::*;
@@ -15,7 +15,7 @@ impl BuildOutput {
     fn read_link_dir(linkdir: &Temp) -> Result<StorePath, BuildError> {
         let mut res_path = linkdir.to_path_buf();
         res_path.push("result");
-        let res_path = res_path.read_link()?;
+        let res_path = fs::canonicalize(res_path)?;
         Ok(StorePath::new(res_path)?)
     }
 
@@ -27,7 +27,7 @@ impl BuildOutput {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct StorePath(PathBuf);
 
 impl StorePath {
@@ -55,6 +55,14 @@ impl TryFrom<&Path> for StorePath {
 
     fn try_from(p: &Path) -> Result<Self, Self::Error> {
         Self::new(p.into())
+    }
+}
+
+impl TryFrom<PathBuf> for StorePath {
+    type Error = StorePathError;
+
+    fn try_from(p: PathBuf) -> Result<Self, Self::Error> {
+        Self::new(p)
     }
 }
 
@@ -160,3 +168,22 @@ impl Updateable for FlakeConfig {
         Ok(has_update)
     }
 }
+
+pub struct Profile {
+    base_path: PathBuf,
+}
+
+impl Profile {
+    pub fn new(p: &Path) -> Self {
+        Self { base_path: p.into() }
+    }
+
+    pub fn system() -> Self {
+        Self::new(Path::new("/nix/var/nix/profiles/system"))
+    }
+
+    pub fn get_current(&self) -> Result<StorePath, StorePathError> {
+        Ok(fs::canonicalize(&self.base_path)?.try_into()?)
+    }
+}
+
