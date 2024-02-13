@@ -114,8 +114,9 @@ impl Buildable for Flake {
             .spawn()?;
         
         output_stderr_as_debug(&mut child.stderr.take().unwrap());
-
-        child.wait()?;
+        if ! child.wait()?.success() {
+            Err(BuildError::NixCommandFailed)?;
+        }
 
         Ok(BuildOutput::from_temp(wd)?)
     }
@@ -136,7 +137,9 @@ impl Updateable for Flake {
                 has_update = true;
             }
         }
-        child.wait()?;
+        if ! child.wait()?.success() {
+            Err(UpdateError::NixCommandFailed)?;
+        }
 
         Ok(has_update)
     }

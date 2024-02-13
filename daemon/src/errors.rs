@@ -13,12 +13,16 @@ pub enum BuildError {
     StorePathError(#[from] StorePathError),
     #[error("build error: {}", .0)]
     IOError(#[from] io::Error),
+    #[error("nix command failed")]
+    NixCommandFailed,
 }
 
 #[derive(Debug, Error)]
 pub enum UpdateError {
     #[error("update failed: {}", .0)]
     IOError(#[from] io::Error),
+    #[error("nix command failed")]
+    NixCommandFailed,
 }
 
 #[derive(Debug, Error)]
