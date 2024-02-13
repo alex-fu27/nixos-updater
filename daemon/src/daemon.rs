@@ -1,7 +1,7 @@
 use std::io;
 use std::io::{BufReader, BufRead};
 use crate::errors::*;
-use crate::nix::{Flake, Updateable, Buildable, BuildOutput};
+use crate::nix::{FlakeConfig, Updateable, Buildable, BuildOutput};
 
 trait Manageable: Updateable + Buildable {}
 impl<T: Updateable + Buildable> Manageable for T {}
@@ -11,7 +11,7 @@ pub struct Daemon {
 }
 
 impl Daemon {
-    fn for_flake(flake: Flake) -> Self {
+    fn for_flake(flake: FlakeConfig) -> Self {
         Self { input: Box::new(flake) }
     }
 
@@ -25,7 +25,7 @@ impl Daemon {
 }
 
 pub fn debug_main() -> anyhow::Result<()> {
-    let upgr = Daemon::for_flake(Flake::from_url("/home/alex/.config/nixpkgs#nixosConfigurations.flink.config.system.build.toplevel")).update_and_build()?;
+    let upgr = Daemon::for_flake(FlakeConfig::from_url_and_config_name("/home/alex/.config/nixpkgs", "flink")).update_and_build()?;
     match upgr {
         None => println!("no upgrade available"),
         Some(output) => println!("upgrade built to {}", &output.path),

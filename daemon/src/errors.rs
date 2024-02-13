@@ -15,6 +15,8 @@ pub enum BuildError {
     IOError(#[from] io::Error),
     #[error("nix command failed")]
     NixCommandFailed,
+    #[error("flake has no attribute")]
+    FlakeHasNoAttr,
 }
 
 #[derive(Debug, Error)]

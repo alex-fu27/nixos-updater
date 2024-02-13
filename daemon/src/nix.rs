@@ -73,13 +73,28 @@ pub trait Updateable {
     fn update(&self) -> Result<bool, UpdateError>;
 }
 
-pub struct Flake {
-    url: String,
+pub struct FlakeConfig {
+    pub url: String,
+    pub attribute: String,
 }
 
-impl Flake {
-    pub fn from_url(url: &str) -> Self {
-        Self { url: url.to_string() }
+impl FlakeConfig {
+    pub fn new(url: &str, attr: &str) -> Self {
+        Self {
+            url: url.to_string(),
+            attribute: attr.to_string()
+        }
+    }
+
+    pub fn from_url_and_config_name(url: &str, config_name: &str) -> Self {
+        Self {
+            url: url.to_string(),
+            attribute: format!("nixosConfigurations.\"{config_name}\".config.system.build.toplevel"),
+        }
+    }
+
+    pub fn get_installable(&self) -> String {
+        format!("{}#{}", &self.url, &self.attribute)
     }
 }
 
@@ -105,12 +120,13 @@ fn output_stderr_as_debug(stderr: &mut ChildStderr) {
     }
 }
 
-impl Buildable for Flake {
+impl Buildable for FlakeConfig {
     fn build(&self) -> Result<BuildOutput, BuildError> {
         let wd = Temp::new_dir()?;
+        let installable = self.get_installable();
         let mut child = nix_command()
             .current_dir(&wd.as_path())
-            .args(["build", &self.url])
+            .args(["build", &installable])
             .spawn()?;
         
         output_stderr_as_debug(&mut child.stderr.take().unwrap());
@@ -122,7 +138,7 @@ impl Buildable for Flake {
     }
 }
 
-impl Updateable for Flake {
+impl Updateable for FlakeConfig {
     fn update(&self) -> Result<bool, UpdateError> {
         let mut child = nix_command()
             .args(["flake", "update", &self.url])
