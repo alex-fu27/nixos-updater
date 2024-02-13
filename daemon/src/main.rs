@@ -1,5 +1,6 @@
 mod client;
 mod dbus_daemon;
+pub mod errors;
 pub mod args;
 pub mod consts;
 pub mod daemon;

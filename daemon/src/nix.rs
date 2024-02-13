@@ -1,36 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::io;
+use std::io::{BufRead, BufReader};
 use mktemp::Temp;
-
-#[derive(Debug)]
-pub enum BuildError {
-    StorePathError(StorePathError),
-    IOError(io::Error),
-}
-
-impl From<io::Error> for BuildError {
-    fn from(e: io::Error) -> Self {
-        Self::IOError(e)
-    }
-}
-
-impl From<StorePathError> for BuildError {
-    fn from(e: StorePathError) -> Self {
-        Self::StorePathError(e)
-    }
-}
-
-#[derive(Debug)]
-pub enum UpdateError {
-    IOError(io::Error),
-}
-
-impl From<io::Error> for BuildError {
-    fn from(e: io::Error) -> Self {
-        Self::IOError(e)
-    }
-}
-
+use crate::errors::*;
 
 #[derive(Debug)]
 pub struct BuildOutput {
@@ -56,11 +29,6 @@ impl BuildOutput {
 
 #[derive(Debug)]
 pub struct StorePath(PathBuf);
-
-#[derive(Debug)]
-pub enum StorePathError {
-    NotInStore(String),
-}
 
 impl StorePath {
     pub fn new(p: PathBuf) -> Result<Self, StorePathError> {
@@ -91,7 +59,7 @@ impl StorePath {
 }
 
 pub trait Buildable {
-    fn build() -> Result<BuildOutput, BuildError>;
+    fn build(&self) -> Result<BuildOutput, BuildError>;
 }
 
 pub trait Updateable {
@@ -106,6 +74,10 @@ impl Flake {
     pub fn from_url(url: &str) -> Self {
         Self { url: url.to_string() }
     }
+}
+
+fn read_to_lines<T: io::Read>(o: &mut Option<T>) -> io::Lines<io::BufReader<T>> {
+    BufReader::new(o.take().unwrap()).lines()
 }
 
 impl Buildable for Flake {

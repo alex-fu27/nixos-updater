@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.79"
+anyhow = "1.0"
 clap = { version = "4", features = [ "cargo", "derive" ] }
 dbus = "0.9"
 dbus-crossroads = "0.5"
@@ -17,4 +17,5 @@ log = "0.4.20"
 mktemp = "0.5.1"
 nix = { version = "0.27", features = [ "user" ] }
 stderrlog = "0.6.0"
+thiserror = "1.0"
 tokio = { version = "1.36", features = ["time", "net", "macros", "rt-multi-thread"] }
