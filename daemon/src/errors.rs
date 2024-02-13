@@ -22,10 +22,10 @@ pub enum UpdateError {
 }
 
 #[derive(Debug, Error)]
-pub enum DaemonError {
-    #[error("update error: {}", .0)]
-    StorePathError(#[from] StorePathError),
-    #[error("update error: {}", .0)]
-    IOError(#[from] io::Error),
+pub enum UpgradeError {
+    #[error("upgrade process failed: {}", .0)]
+    BuildError(#[from] BuildError),
+    #[error("upgrade process failed: {}", .0)]
+    UpdateError(#[from] UpdateError),
 }
 

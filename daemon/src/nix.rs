@@ -7,8 +7,8 @@ use crate::errors::*;
 
 #[derive(Debug)]
 pub struct BuildOutput {
-    path: StorePath,
-    linkdir: Temp,
+    pub path: StorePath,
+    pub linkdir: Temp,
 }
 
 impl BuildOutput {
@@ -41,6 +41,12 @@ impl StorePath {
         } else {
             Ok(Self(p.into()))
         }
+    }
+}
+
+impl std::fmt::Display for StorePath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.display().fmt(f)
     }
 }
 
@@ -121,7 +127,8 @@ impl Updateable for Flake {
             .args(["flake", "update", &self.url])
             .spawn()?;
         
-        let stderr = read_to_lines(child.stderr.take().unwrap);
+        let mut bind = child.stderr.take().unwrap();
+        let stderr = read_to_lines(&mut bind);
         let mut has_update = false;
         for line in stderr.flatten() {
             log::debug!("{}", line);

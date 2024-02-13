@@ -42,7 +42,7 @@ fn main() -> anyhow::Result<()> {
                 .unwrap()
                 .block_on(dbus_daemon::main()),
         Command::DaemonDebug =>
-            Ok(daemon::debug_main()),
+            daemon::debug_main(),
         _ => handle_client_commandline(&args),
     }
 }
