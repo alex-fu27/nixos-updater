@@ -15,8 +15,7 @@ impl BuildOutput {
     fn read_link_dir(linkdir: &Temp) -> Result<StorePath, BuildError> {
         let mut res_path = linkdir.to_path_buf();
         res_path.push("result");
-        let res_path = fs::canonicalize(res_path)?;
-        Ok(StorePath::new(res_path)?)
+        Ok(StorePath::new(&res_path)?)
     }
 
     pub fn from_temp(linkdir: Temp) -> Result<Self, BuildError> {
@@ -31,16 +30,23 @@ impl BuildOutput {
 pub struct StorePath(PathBuf);
 
 impl StorePath {
-    pub fn new(p: PathBuf) -> Result<Self, StorePathError> {
-        if ! p.starts_with("/nix/store/") {
-            let s = match p.to_str() {
+    pub fn new(p: &Path) -> Result<Self, StorePathError> {
+        let can = fs::canonicalize(p)?;
+        if ! can.starts_with("/nix/store/") {
+            let s = match can.to_str() {
                 Some(s) => s,
                 None => "unprintable path",
             };
             Err(StorePathError::NotInStore(s.to_string()))
         } else {
-            Ok(Self(p.into()))
+            Ok(Self(can))
         }
+    }
+
+    pub fn subpath(&self, s: &str) -> PathBuf {
+        let mut pb = self.0.clone();
+        pb.push(s);
+        pb
     }
 }
 
@@ -62,7 +68,13 @@ impl TryFrom<PathBuf> for StorePath {
     type Error = StorePathError;
 
     fn try_from(p: PathBuf) -> Result<Self, Self::Error> {
-        Self::new(p)
+        Self::new(&p)
+    }
+}
+
+impl From<&StorePath> for PathBuf {
+    fn from(p: &StorePath) -> PathBuf {
+        p.0.clone()
     }
 }
 
@@ -183,7 +195,7 @@ impl Profile {
     }
 
     pub fn get_current(&self) -> Result<StorePath, StorePathError> {
-        Ok(fs::canonicalize(&self.base_path)?.try_into()?)
+        Ok(self.base_path.as_path().try_into()?)
     }
 }
 

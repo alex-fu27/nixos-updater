@@ -1,10 +1,48 @@
 use std::io;
 use std::io::{BufReader, BufRead};
+use std::path::{Path, PathBuf};
 use crate::errors::*;
-use crate::nix::{Profile, FlakeConfig, Updateable, Buildable, BuildOutput};
+use crate::nix::*;
 
 trait Manageable: Updateable + Buildable {}
 impl<T: Updateable + Buildable> Manageable for T {}
+
+pub enum UpgradeNeeds {
+    None,
+    Switch,
+    Reboot,
+}
+
+impl UpgradeNeeds {
+    fn read_system_file_link(base: &StorePath, suffix: &str) -> Result<StorePath, StorePathError> {
+        let mut pb: PathBuf = base.into();
+        pb.push(suffix);
+        todo!();
+    }
+
+    fn sublink_eq(from: &StorePath, to: &StorePath, sub: &str) -> Result<bool, StorePathError> {
+        let p1 = StorePath::new(&from.subpath(sub))?;
+        let p2 = StorePath::new(&to.subpath(sub))?;
+        Ok(p1 == p2)
+    }
+
+    pub fn compare(from: &StorePath, to: &StorePath) -> UpgradeNeeds {
+        if from == to {
+            return UpgradeNeeds::None;
+        }
+        return UpgradeNeeds::Switch;
+    }
+}
+
+pub enum DaemonState {
+    Idle,
+    UpdatingInputs,
+    BuildingOutput,
+    RequiresSwitch,
+    SwitchingBoot,
+    RequiresReboot,
+    SwitchingConfiguration,
+}
 
 pub struct Daemon {
     input: Box<dyn Manageable>,
