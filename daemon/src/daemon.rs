@@ -7,6 +7,7 @@ use crate::nix::*;
 trait Manageable: Updateable + Buildable {}
 impl<T: Updateable + Buildable> Manageable for T {}
 
+#[derive(Debug)]
 pub enum UpgradeNeeds {
     None,
     Switch,
@@ -26,11 +27,16 @@ impl UpgradeNeeds {
         Ok(p1 == p2)
     }
 
-    pub fn compare(from: &StorePath, to: &StorePath) -> UpgradeNeeds {
+    pub fn compare(from: &StorePath, to: &StorePath) -> Result<Self, StorePathError> {
         if from == to {
-            return UpgradeNeeds::None;
+            return Ok(UpgradeNeeds::None);
         }
-        return UpgradeNeeds::Switch;
+        if Self::sublink_eq(from, to, "initrd")?
+                && Self::sublink_eq(from, to, "kernel")?
+                && Self::sublink_eq(from, to, "kernel-modules")? {
+            return Ok(UpgradeNeeds::Switch);
+        }
+        Ok(UpgradeNeeds::Reboot)
     }
 }
 
@@ -68,24 +74,21 @@ impl Daemon {
         Ok(self.input.build()?)
     }
 
-    pub fn full_upgrade(&self) -> Result<Option<BuildOutput>, UpgradeError> {
+    pub fn full_upgrade(&self) -> Result<Option<(BuildOutput, UpgradeNeeds)>, UpgradeError> {
         let out = self.update_and_build()?;
         let sys = self.profile.get_current()?;
         log::debug!("current: {}, new: {}", sys, out.path);
-        if out.path != sys {
-            log::info!("need update!");
-            return Ok(Some(out));
-        }
-        Ok(None)
+        let un = UpgradeNeeds::compare(&sys, &out.path)?;
+        Ok(match un {
+            UpgradeNeeds::None => None,
+            un => Some((out, un)),
+        })
     }
 }
 
 pub fn debug_main() -> anyhow::Result<()> {
     let upgr = Daemon::for_flake(FlakeConfig::from_url_and_config_name("/home/alex/.config/nixpkgs", "flink")).full_upgrade()?;
-    match upgr {
-        None => println!("no upgrade available"),
-        Some(output) => println!("upgrade built to {}", &output.path),
-    }
+    println!("result: {:?}", upgr);
     Ok(())
 }
 
