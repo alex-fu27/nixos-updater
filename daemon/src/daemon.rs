@@ -1,8 +1,14 @@
 use std::io;
 use std::io::{BufReader, BufRead};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use crate::errors::*;
 use crate::nix::*;
+use std::sync::mpsc;
+use std::pin::Pin;
+use futures::Future;
+use futures::task::{Context, Poll};
+use tokio::task::JoinHandle;
 
 trait Manageable: Updateable + Buildable {}
 impl<T: Updateable + Buildable> Manageable for T {}
@@ -40,22 +46,28 @@ impl UpgradeNeeds {
     }
 }
 
-pub enum DaemonState {
-    Idle,
+#[derive(Debug)]
+pub enum UpgradeState {
     UpdatingInputs,
     BuildingOutput,
     RequiresSwitch,
     SwitchingBoot,
     RequiresReboot,
     SwitchingConfiguration,
+    Done
 }
 
-pub struct Daemon {
-    input: Box<dyn Manageable>,
+pub struct UpgradeProcessInfo {
+    out_queue: Option<mpsc::Receiver<UpgradeState>>,
+    result: Option<JoinHandle<Result<(), UpgradeError>>>,
+}
+
+pub struct UpgradeProcess {
+    input: Box<dyn Manageable + Send>,
     profile: Profile,
 }
 
-impl Daemon {
+impl UpgradeProcess {
     pub fn for_flake(flake: FlakeConfig) -> Self {
         Self {
             input: Box::new(flake),
@@ -63,32 +75,60 @@ impl Daemon {
         }
     }
 
-    pub fn update_and_build(&self) -> Result<BuildOutput, UpgradeError> {
-        log::info!("updating inputs...");
-        if self.input.update()? {
-            log::info!("inputs changed");   
-        } else {
-            log::info!("inputs unchanged");   
-        }
-        log::info!("building output...");
-        Ok(self.input.build()?)
+    fn compute_required_action(&self, new: &BuildOutput) -> Result<UpgradeNeeds, UpgradeError> {
+        let sys = self.profile.get_current()?;
+        Ok(UpgradeNeeds::compare(&sys, &new.path)?)
     }
 
-    pub fn full_upgrade(&self) -> Result<Option<(BuildOutput, UpgradeNeeds)>, UpgradeError> {
-        let out = self.update_and_build()?;
-        let sys = self.profile.get_current()?;
-        log::debug!("current: {}, new: {}", sys, out.path);
-        let un = UpgradeNeeds::compare(&sys, &out.path)?;
-        Ok(match un {
-            UpgradeNeeds::None => None,
-            un => Some((out, un)),
-        })
+    fn do_switch(&self, out: BuildOutput) -> Result<(), UpgradeError> {
+        let binary = out.path.subpath("bin/switch-to-configuration");
+        let map = |e| UpgradeError::SwitchFailed(Some(e));
+        let mut chld = Command::new(binary).arg("switch").spawn().map_err(map)?;
+        let out = chld.wait().map_err(map)?;
+        if ! out.success() {
+            return Err(UpgradeError::SwitchFailed(None));
+        }
+        Ok(())
+    }
+
+    fn do_reboot(&self, out: BuildOutput) -> Result<(), UpgradeError> {
+        todo!();
+    }
+
+    pub fn run(self) -> UpgradeProcessInfo {
+        let (out_tx, out_queue) = mpsc::channel();
+
+        let result = tokio::spawn(async move {
+            out_tx.send(UpgradeState::UpdatingInputs).unwrap();
+            self.input.update()?;
+            out_tx.send(UpgradeState::BuildingOutput).unwrap();
+            let out = self.input.build()?;
+            let action = self.compute_required_action(&out)?;
+            match action {
+                UpgradeNeeds::None => Ok::<(), UpgradeError>(()),
+                UpgradeNeeds::Switch => self.do_switch(out),
+                UpgradeNeeds::Reboot => self.do_reboot(out),
+            }
+        });
+
+        UpgradeProcessInfo {
+            out_queue: Some(out_queue),
+            result: Some(result),
+        }
     }
 }
 
-pub fn debug_main() -> anyhow::Result<()> {
-    let upgr = Daemon::for_flake(FlakeConfig::from_url_and_config_name("/home/alex/.config/nixpkgs", "flink")).full_upgrade()?;
-    println!("result: {:?}", upgr);
+pub async fn debug_main() -> anyhow::Result<()> {
+    let d = UpgradeProcess::for_flake(FlakeConfig::from_url_and_config_name("/home/alex/.config/nixpkgs", "flink"));
+
+    let mut r = d.run();
+
+    for i in r.out_queue.take().unwrap() {
+        println!("got {:?}", i);
+    }
+
+    println!("result {:?}", r.result.take().unwrap().await.unwrap());
+
     Ok(())
 }
 

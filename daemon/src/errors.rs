@@ -37,5 +37,7 @@ pub enum UpgradeError {
     UpdateError(#[from] UpdateError),
     #[error("upgrade failed: {}", .0)]
     StorePathError(#[from] StorePathError),
+    #[error("switch command failed: {:?}", .0)]
+    SwitchFailed(Option<io::Error>),
 }
 

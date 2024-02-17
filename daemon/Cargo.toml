@@ -18,4 +18,4 @@ mktemp = "0.5.1"
 nix = { version = "0.27", features = [ "user" ] }
 stderrlog = "0.6.0"
 thiserror = "1.0"
-tokio = { version = "1.36", features = ["time", "net", "macros", "rt-multi-thread"] }
+tokio = { version = "1.36", features = ["time", "net", "sync", "macros", "rt-multi-thread"] }

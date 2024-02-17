@@ -42,7 +42,11 @@ fn main() -> anyhow::Result<()> {
                 .unwrap()
                 .block_on(dbus_daemon::main()),
         Command::DaemonDebug =>
-            daemon::debug_main(),
+            tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .unwrap()
+                .block_on(daemon::debug_main()),
         _ => handle_client_commandline(&args),
     }
 }
