@@ -47,6 +47,14 @@ impl UpgradeNeeds {
 }
 
 #[derive(Debug)]
+pub enum UpgradeCommand {
+    Cancel,
+    Switch,
+    SetBoot,
+    Reboot,
+}
+
+#[derive(Debug, PartialEq)]
 pub enum UpgradeState {
     UpdatingInputs,
     BuildingOutput,
@@ -54,11 +62,13 @@ pub enum UpgradeState {
     SwitchingBoot,
     RequiresReboot,
     SwitchingConfiguration,
+    Rebooting,
     Done
 }
 
 pub struct UpgradeProcessInfo {
     out_queue: Option<mpsc::Receiver<UpgradeState>>,
+    in_queue: mpsc::Sender<UpgradeCommand>,
     result: Option<JoinHandle<Result<(), UpgradeError>>>,
 }
 
@@ -80,23 +90,36 @@ impl UpgradeProcess {
         Ok(UpgradeNeeds::compare(&sys, &new.path)?)
     }
 
-    fn do_switch(&self, out: BuildOutput) -> Result<(), UpgradeError> {
+    fn exec_switch_to_configuration(&self, out: &BuildOutput, arg: &str) -> Result<(), UpgradeError> {
         let binary = out.path.subpath("bin/switch-to-configuration");
-        let map = |e| UpgradeError::SwitchFailed(Some(e));
-        let mut chld = Command::new(binary).arg("switch").spawn().map_err(map)?;
-        let out = chld.wait().map_err(map)?;
+        let mut chld = Command::new(binary).arg(arg).spawn().map_err(UpgradeError::map_switch_io_error)?;
+        let out = chld.wait().map_err(UpgradeError::map_switch_io_error)?;
         if ! out.success() {
             return Err(UpgradeError::SwitchFailed(None));
         }
         Ok(())
     }
 
-    fn do_reboot(&self, out: BuildOutput) -> Result<(), UpgradeError> {
-        todo!();
+    fn switch_to(&self, out: &BuildOutput) -> Result<(), UpgradeError> {
+        self.exec_switch_to_configuration(out, "switch")
+    }
+
+    fn make_boot_default(&self, out: &BuildOutput) -> Result<(), UpgradeError> {
+        self.exec_switch_to_configuration(out, "boot")
+    }
+
+    fn reboot(&self) -> Result<(), UpgradeError> {
+        let out = Command::new("reboot")
+            .output().map_err(UpgradeError::map_reboot_failed)?;
+        if ! out.status.success() {
+            Err(UpgradeError::RebootFailed(String::from_utf8(out.stderr).unwrap()))?;
+        }
+        Ok(())
     }
 
     pub fn run(self) -> UpgradeProcessInfo {
         let (out_tx, out_queue) = mpsc::channel();
+        let (in_queue, in_rx) = mpsc::channel();
 
         let result = tokio::spawn(async move {
             out_tx.send(UpgradeState::UpdatingInputs).unwrap();
@@ -105,14 +128,46 @@ impl UpgradeProcess {
             let out = self.input.build()?;
             let action = self.compute_required_action(&out)?;
             match action {
-                UpgradeNeeds::None => Ok::<(), UpgradeError>(()),
-                UpgradeNeeds::Switch => self.do_switch(out),
-                UpgradeNeeds::Reboot => self.do_reboot(out),
+                UpgradeNeeds::None => {
+                    out_tx.send(UpgradeState::Done).unwrap();
+                    return Ok::<(), UpgradeError>(());
+                },
+                UpgradeNeeds::Switch => {
+                    out_tx.send(UpgradeState::RequiresSwitch);
+                },
+                UpgradeNeeds::Reboot => {
+                    out_tx.send(UpgradeState::RequiresReboot);
+                },
             }
+
+            let cmd = in_rx.recv().unwrap();
+            match cmd {
+                UpgradeCommand::Cancel => {
+                    out_tx.send(UpgradeState::Done).unwrap();
+                    return Err(UpgradeError::Cancelled);
+                },
+                UpgradeCommand::Switch => {
+                    out_tx.send(UpgradeState::SwitchingConfiguration);
+                    self.switch_to(&out)?;
+                },
+                UpgradeCommand::SetBoot => {
+                    out_tx.send(UpgradeState::SwitchingBoot);
+                    self.make_boot_default(&out)?;
+                },
+                UpgradeCommand::Reboot => {
+                    out_tx.send(UpgradeState::SwitchingBoot);
+                    self.make_boot_default(&out)?;
+                    out_tx.send(UpgradeState::Rebooting);
+                    self.reboot()?;
+                },
+            }
+            out_tx.send(UpgradeState::Done).unwrap();
+            Ok(())
         });
 
         UpgradeProcessInfo {
             out_queue: Some(out_queue),
+            in_queue,
             result: Some(result),
         }
     }
@@ -125,6 +180,10 @@ pub async fn debug_main() -> anyhow::Result<()> {
 
     for i in r.out_queue.take().unwrap() {
         println!("got {:?}", i);
+        if i == UpgradeState::RequiresReboot {
+            println!("sending reboot command");
+            r.in_queue.send(UpgradeCommand::Reboot).unwrap();
+        }
     }
 
     println!("result {:?}", r.result.take().unwrap().await.unwrap());

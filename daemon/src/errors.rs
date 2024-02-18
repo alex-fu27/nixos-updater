@@ -39,5 +39,19 @@ pub enum UpgradeError {
     StorePathError(#[from] StorePathError),
     #[error("switch command failed: {:?}", .0)]
     SwitchFailed(Option<io::Error>),
+    #[error("reboot failed: {:?}", .0)]
+    RebootFailed(String),
+    #[error("user cancelled operation")]
+    Cancelled,
+}
+
+impl UpgradeError {
+    pub fn map_switch_io_error(e: io::Error) -> UpgradeError {
+        Self::SwitchFailed(Some(e))
+    }
+
+    pub fn map_reboot_failed(e: impl std::error::Error) -> UpgradeError {
+        Self::RebootFailed(e.to_string())
+    }
 }
 
