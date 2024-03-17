@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
 	<gresource prefix="/de/afuchs/NixOSUpdater/">
-		<file compressed="true" preprocess="xml-stripblanks">frontend.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">app.ui</file>
 	</gresource>
 </gresources>

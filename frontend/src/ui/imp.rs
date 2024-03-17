@@ -5,7 +5,7 @@ use gtk::{glib, Button, CompositeTemplate};
 
 // Object holding the state
 #[derive(CompositeTemplate, Default)]
-#[template(resource = "/de/afuchs/NixOSUpdater/frontend.ui")]
+#[template(resource = "/de/afuchs/NixOSUpdater/app.ui")]
 pub struct UpdaterWindow {
 //	#[template_child]
 //	pub button: TemplateChild<Button>,
