@@ -16,7 +16,16 @@
 		in {
 			packages.default = naersk.buildPackage ./daemon ;
 			devShells.default = with pkgs; mkShell {
-				buildInputs = [ fenix.packages.${system}.latest.toolchain pre-commit pkg-config dbus ];
+				buildInputs = [
+					fenix.packages.${system}.latest.toolchain pre-commit
+					wrapGAppsHook4
+					meson
+					gtk4
+					desktop-file-utils
+					ninja
+					libadwaita
+					libsecret
+					pkg-config dbus ];
 				RUST_SRC_PATH = rustPlatform.rustLibSrc;
 			};
 		});

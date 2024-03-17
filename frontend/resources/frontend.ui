@@ -1,0 +1,131 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<interface>
+	<requires lib="gtk" version="4.12"/>
+	<requires lib="libadwaita" version="1.4"/>
+	<menu id="app_menu">
+		<section>
+			<item>
+				<attribute name="label">Auf Aktualisierungen prüfen</attribute>
+				<attribute name="action">app.check-for-updates</attribute>
+			</item>
+		</section>
+	</menu>
+	<template class="UpdaterWindow" parent="AdwApplicationWindow">
+		<property name="default-height">626</property>
+		<property name="default-width">782</property>
+		<child>
+			<object class="AdwToolbarView">
+				<child type="top">
+					<object class="AdwHeaderBar" id="header_bar">
+						<child type="title">
+							<object class="AdwViewSwitcher">
+								<property name="stack">stack</property>
+								<property name="policy">wide</property>
+							</object>
+						</child>
+						<child type="end">
+							<object class="GtkMenuButton">
+								<property name="menu-model">app_menu</property>
+								<property name="tooltip-text" translatable="yes">Actions</property>
+								<property name="icon-name">view-more-symbolic</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<property name="content">
+					<object class="GtkBox">
+						<child>
+							<object class="AdwViewStack" id="stack">
+								<child>
+									<object class="AdwViewStackPage">
+											<property name="icon-name">software-update-available-symbolic</property>
+											<property name="title">Aktualisierungen</property>
+											<property name="child">
+												<object class="AdwStatusPage">
+													<property name="child">
+														<object class="AdwClamp">
+															<property name="unit">pt</property>
+															<property name="maximum-size">600</property>
+															<property name="child">
+																<object class="GtkListBox">
+																	<property name="css-classes">boxed-list</property>
+																	<child>
+																		<object class="AdwExpanderRow">
+																			<property name="enable-expansion">false</property> <!-- TODO -->
+																			<property name="title">Systemaktualisierung verfügbar</property>
+																			<property name="subtitle">NixOS 23.11.20240312.51063ed</property>
+																		</object>
+																	</child>
+																	<child>
+																		<object class="GtkBox">
+																			<property name="orientation">horizontal</property>
+																			<property name="spacing">10</property>
+																			<property name="margin-top">10</property>
+																			<property name="margin-bottom">10</property>
+																			<property name="halign">center</property>
+																			<child>
+																				<object class="GtkButton" id="button-switch">
+																					<style>
+																						<class name="suggested-action"/>
+																						<class name="pill"/>
+																					</style>
+																					<property name="label">Jetzt aktivieren</property>
+																				</object>
+																			</child>
+																			<child>
+																				<object class="GtkButton" id="button-boot">
+																					<style>
+																						<class name="pill"/>
+																					</style>
+																					<property name="label">Beim Neustart aktivieren</property>
+																				</object>
+																			</child>
+																		</object>
+																	</child>
+																</object>
+															</property>
+														</object>
+													</property>
+												</object>
+											</property>
+									</object>
+								</child>
+								<child>
+									<object class="AdwViewStackPage">
+											<property name="icon-name">org.gnome.Settings-symbolic</property>
+											<property name="title">Einstellungen</property>
+											<property name="child">
+												<object class="AdwPreferencesPage">
+													<child>
+														<object class="AdwPreferencesGroup">
+															<property name="description">A Group</property>
+															<property name="title">Group 1</property>
+															<child>
+																<object class="AdwPreferencesRow">
+																	<property name="title">Preference Row</property>
+																	<child>
+																		<object class="GtkButton">
+																			<property name="label">asdf</property>
+																		</object>
+																	</child>
+																</object>
+															</child>
+														</object>
+													</child>
+												</object>
+											</property>
+									</object>
+								</child>
+							</object>
+						</child>
+					</object>
+				</property>
+				<child type="bottom">
+					<object class="AdwViewSwitcherBar" id="switcher_bar">
+						<property name="stack">stack</property>
+					</object>
+				</child>
+			</object>
+		</child>
+	</template>
+</interface>
