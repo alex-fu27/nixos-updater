@@ -3,5 +3,6 @@
 	<gresource prefix="/de/afuchs/NixOSUpdater/">
 		<file compressed="true" preprocess="xml-stripblanks">app.ui</file>
 		<file compressed="true" preprocess="xml-stripblanks">overview.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">preferences.ui</file>
 	</gresource>
 </gresources>

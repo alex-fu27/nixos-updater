@@ -1,0 +1,20 @@
+<interface>
+	<template class="UpdaterPreferencesPage" parent="AdwPreferencesPage">
+		<child>
+			<object class="AdwPreferencesGroup">
+				<property name="description">A Group</property>
+				<property name="title">Group 1</property>
+				<child>
+					<object class="AdwPreferencesRow">
+						<property name="title">Preference Row</property>
+						<child>
+							<object class="GtkButton">
+								<property name="label">asdf</property>
+							</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+	</template>
+</interface>

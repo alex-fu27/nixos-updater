@@ -21,6 +21,7 @@ impl ObjectSubclass for UpdaterWindow {
 
 	fn class_init(klass: &mut Self::Class) {
 		crate::ui::UpdaterOverviewPage::ensure_type();
+		crate::ui::UpdaterPreferencesPage::ensure_type();
 		klass.bind_template();
 	}
 
