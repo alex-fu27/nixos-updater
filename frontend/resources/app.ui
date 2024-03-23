@@ -38,56 +38,15 @@
 							<object class="AdwViewStack" id="stack">
 								<child>
 									<object class="AdwViewStackPage">
-											<property name="icon-name">software-update-available-symbolic</property>
-											<property name="title">Aktualisierungen</property>
-											<property name="child">
-												<object class="AdwStatusPage">
-													<property name="child">
-														<object class="AdwClamp">
-															<property name="unit">pt</property>
-															<property name="maximum-size">600</property>
-															<property name="child">
-																<object class="GtkListBox">
-																	<property name="css-classes">boxed-list</property>
-																	<child>
-																		<object class="AdwExpanderRow">
-																			<property name="enable-expansion">false</property> <!-- TODO -->
-																			<property name="title">Systemaktualisierung verfügbar</property>
-																			<property name="subtitle">NixOS 23.11.20240312.51063ed</property>
-																		</object>
-																	</child>
-																	<child>
-																		<object class="GtkBox">
-																			<property name="orientation">horizontal</property>
-																			<property name="spacing">10</property>
-																			<property name="margin-top">10</property>
-																			<property name="margin-bottom">10</property>
-																			<property name="halign">center</property>
-																			<child>
-																				<object class="GtkButton" id="button-switch">
-																					<style>
-																						<class name="suggested-action"/>
-																						<class name="pill"/>
-																					</style>
-																					<property name="label">Jetzt aktivieren</property>
-																				</object>
-																			</child>
-																			<child>
-																				<object class="GtkButton" id="button-boot">
-																					<style>
-																						<class name="pill"/>
-																					</style>
-																					<property name="label">Beim Neustart aktivieren</property>
-																				</object>
-																			</child>
-																		</object>
-																	</child>
-																</object>
-															</property>
-														</object>
-													</property>
-												</object>
-											</property>
+										<property name="icon-name">software-update-available-symbolic</property>
+										<property name="title">Aktualisierungen</property>
+										<property name="child">
+											<object class="AdwStatusPage">
+												<property name="child">
+													<object class="UpdaterOverviewPage" />
+												</property>
+											</object>
+										</property>
 									</object>
 								</child>
 								<child>
