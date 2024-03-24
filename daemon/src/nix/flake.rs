@@ -59,10 +59,17 @@ impl Buildable for FlakeConfig {
 		}
 
 		let mut bnd = child.stdout.take().unwrap();
-		let lines = read_to_lines(&mut bnd);
-		let last = lines.flatten().reduce(|_, a| a).expect("nix build --dry-run has not produced an output list");
+		let vod: Vec<DrvResultInfo> = serde_json::from_reader(BufReader::new(bnd))
+			.map_err(BuildError::ParsingNixBuildJSONFailed)?;
 
-		todo!()
+		if vod.len() != 1 {
+			 return Err(BuildError::DryRunProducedUnexpected(format!("{} derivations", vod.len())));
+		}
+		let os = &vod[0].outputs;
+
+		os.get("out").ok_or(
+			BuildError::DryRunProducedUnexpected(
+				 format!("no output 'out', {} instead", serde_json::to_string(os).unwrap())))
 	}
 }
 
@@ -87,6 +94,17 @@ impl Updateable for FlakeConfig {
 
 		Ok(has_update)
 	}
+}
+
+#[cfg(test)]
+mod tests {
+	 use super::*;
+
+	 #[test]
+	 fn dry_build_something() {
+		  let fc = FlakeConfig::new("nixpkgs", "hello");
+		  println!("{:?}", fc.dry_build());
+	 }
 }
 
 

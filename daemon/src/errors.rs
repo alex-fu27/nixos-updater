@@ -19,6 +19,10 @@ pub enum BuildError {
 	NixCommandFailed,
 	#[error("flake has no attribute")]
 	FlakeHasNoAttr,
+	#[error("nix build --json output could not be parsed: {}", .0)]
+	ParsingNixBuildJSONFailed(serde_json::Error),
+	#[error("nix build --dry-run produced unexepcted output: {}", .0)]
+	DryRunProducedUnexpected(String),
 }
 
 #[derive(Debug, Error)]

@@ -9,7 +9,7 @@ pub fn nix_command() -> Command {
 	let mut cmd = Command::new("nix");
 	cmd.stdin(Stdio::null())
 		.stderr(Stdio::piped())
-		.stdout(Stdio::null())
+		.stdout(Stdio::piped())
 		.args(["--extra-experimental-features", "nix-command flakes",
 				"-vv",]);
 	cmd
