@@ -16,6 +16,9 @@ futures = "0.3"
 log = "0.4.20"
 mktemp = "0.5.1"
 nix = { version = "0.27", features = [ "user" ] }
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
+serde_with = "3.7.0"
 stderrlog = "0.6.0"
 thiserror = "1.0"
 tokio = { version = "1.36", features = ["time", "net", "sync", "macros", "rt-multi-thread"] }

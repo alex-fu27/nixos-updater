@@ -1,5 +1,6 @@
 pub mod store;
 pub mod flake;
+pub mod command;
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio, ChildStderr};
@@ -43,89 +44,6 @@ pub trait Updateable {
 	fn update(&self) -> Result<bool, UpdateError>;
 }
 
-fn read_to_lines<T: io::Read>(o: &mut T) -> io::Lines<io::BufReader<&mut T>> {
-	BufReader::new(o).lines()
-}
-
-fn nix_command() -> Command {
-	let mut cmd = Command::new("nix");
-	cmd.stdin(Stdio::null())
-		.stderr(Stdio::piped())
-		.stdout(Stdio::null())
-		.args(["--extra-experimental-features", "nix-command flakes",
-				"-vv",]);
-	cmd
-}
-
-fn output_stderr_as_debug(stderr: &mut ChildStderr) {
-	let stderr = read_to_lines(stderr);
-
-	for line in stderr.flatten() {
-		log::debug!("{}", line);
-	}
-}
-
-impl Buildable for FlakeConfig {
-	fn build(&self) -> Result<BuildOutput, BuildError> {
-		let wd = Temp::new_dir()?;
-		let installable = self.get_installable();
-		let mut child = nix_command()
-			.current_dir(&wd.as_path())
-			.args(["build", &installable])
-			.spawn()?;
-		
-		output_stderr_as_debug(&mut child.stderr.take().unwrap());
-		if ! child.wait()?.success() {
-			Err(BuildError::NixCommandFailed)?;
-		}
-
-		Ok(BuildOutput::from_temp(wd)?)
-	}
-
-	fn dry_build(&self) -> Result<StorePath, BuildError> {
-		let wd = Temp::new_dir()?;
-		let installable = self.get_installable();
-		let mut child = nix_command()
-			.current_dir(&wd.as_path())
-			.args(["build", "--json", "--dry-run", &installable])
-			.spawn()?;
-		
-		output_stderr_as_debug(&mut child.stderr.take().unwrap());
-		if ! child.wait()?.success() {
-			Err(BuildError::NixCommandFailed)?;
-		}
-
-		  let lines = read_to_lines(&mut child.stdout.take().unwrap());
-		  let last = lines.flatten().reduce(|_, a| a).expect("nix build --dry-run has not produced an output list");
-
-
-		  todo!()
-	}
-}
-
-impl Updateable for FlakeConfig {
-	fn update(&self) -> Result<bool, UpdateError> {
-		let mut child = nix_command()
-			.args(["flake", "update", &self.url])
-			.spawn()?;
-		
-		let mut bind = child.stderr.take().unwrap();
-		let stderr = read_to_lines(&mut bind);
-		let mut has_update = false;
-		for line in stderr.flatten() {
-			log::debug!("{}", line);
-			if line.contains("updating lock file") {
-				has_update = true;
-			}
-		}
-		if ! child.wait()?.success() {
-			Err(UpdateError::NixCommandFailed)?;
-		}
-
-		Ok(has_update)
-	}
-}
-
 pub struct Profile {
 	base_path: PathBuf,
 }
@@ -141,13 +59,5 @@ impl Profile {
 
 	pub fn get_current(&self) -> Result<StorePath, StorePathError> {
 		Ok(self.base_path.as_path().try_into()?)
-	}
-}
-
-#[cfg(tests)]
-mod tests {
-	#[test]
-	fn testtest() {
-		assert_eq!(1, 0);
 	}
 }

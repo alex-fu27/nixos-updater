@@ -1,13 +1,17 @@
 use crate::errors::*;
 use std::path::{Path, PathBuf};
 use std::fs;
+use std::str::FromStr;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, serde_with::DeserializeFromStr)]
 pub struct StorePath(PathBuf);
 
 impl StorePath {
 	pub fn new(p: &Path) -> Result<Self, StorePathError> {
-		let can = fs::canonicalize(p)?;
+		let can = match fs::canonicalize(p) {
+			Ok(x) => x,
+			Err(_) => PathBuf::from(p),
+		};
 		if ! can.starts_with("/nix/store/") {
 			let s = match can.to_str() {
 				Some(s) => s,
@@ -51,6 +55,13 @@ impl TryFrom<PathBuf> for StorePath {
 impl From<&StorePath> for PathBuf {
 	fn from(p: &StorePath) -> PathBuf {
 		p.0.clone()
+	}
+}
+
+impl FromStr for StorePath {
+	type Err = StorePathError;
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		Self::new(&PathBuf::from(s))
 	}
 }
 
