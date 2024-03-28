@@ -59,17 +59,17 @@ impl Buildable for FlakeConfig {
 		}
 
 		let mut bnd = child.stdout.take().unwrap();
-		let vod: Vec<DrvResultInfo> = serde_json::from_reader(BufReader::new(bnd))
+		let mut vod: Vec<DrvResultInfo> = serde_json::from_reader(BufReader::new(bnd))
 			.map_err(BuildError::ParsingNixBuildJSONFailed)?;
 
 		if vod.len() != 1 {
 			 return Err(BuildError::DryRunProducedUnexpected(format!("{} derivations", vod.len())));
 		}
-		let os = &vod[0].outputs;
+		let mut os = vod.remove(0).outputs;
 
-		os.get("out").ok_or(
+		os.remove("out").ok_or(
 			BuildError::DryRunProducedUnexpected(
-				 format!("no output 'out', {} instead", serde_json::to_string(os).unwrap())))
+				 format!("no output 'out', {} instead", serde_json::to_string(&os).unwrap())))
 	}
 }
 
