@@ -7,6 +7,9 @@ use std::process::{Command, Stdio, ChildStderr};
 use std::{io, fs};
 use std::io::{BufRead, BufReader};
 use mktemp::Temp;
+use glob::glob;
+use std::collections::HashSet;
+
 use crate::errors::*;
 
 use store::StorePath;
@@ -59,5 +62,18 @@ impl Profile {
 
 	pub fn get_current(&self) -> Result<StorePath, StorePathError> {
 		Ok(self.base_path.as_path().try_into()?)
+	}
+
+	/// Get a list of the generations of the profile as a HashSet of StorePath
+	pub fn get_generations(&self) -> Result<HashSet<StorePath>, StorePathError> {
+		let mut hs = HashSet::new();
+
+		let base_path_str = self.base_path.to_str().unwrap();
+		for entry in glob(&format!("{}-*-link", base_path_str)).unwrap().flatten() {
+			let sp = StorePath::new(&entry)?;
+			hs.insert(sp);
+		}
+
+		Ok(hs)
 	}
 }

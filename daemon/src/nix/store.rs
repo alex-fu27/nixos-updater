@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::fs;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, serde_with::DeserializeFromStr, serde_with::SerializeDisplay)]
+#[derive(Debug, PartialEq, Eq, Hash, serde_with::DeserializeFromStr, serde_with::SerializeDisplay)]
 pub struct StorePath(PathBuf);
 
 impl StorePath {
