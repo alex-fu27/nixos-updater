@@ -1,6 +1,6 @@
 {
 	inputs = {
-			nixpkgs.url = "nixpkgs/nixos-23.11";
+			nixpkgs.url = "nixpkgs/nixos-24.11";
 			utils.url = "github:numtide/flake-utils";
 			naersk.url = "github:nix-community/naersk";
 			fenix = {
